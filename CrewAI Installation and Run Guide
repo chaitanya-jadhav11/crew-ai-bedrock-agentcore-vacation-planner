@@ -1,0 +1,54 @@
+............1. Pre-Requisites................
+1. VSCode - https://code.visualstudio.com/download
+2. Install Python ---> Recommended: 3.11.9 (3.10 to 3.13) - https://www.python.org/downloads/
+3. AWS Account
+4. Install AWS CLI --- > https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+5. Setup IAM Role for AWS CLI
+.............
+
+......2. CrewAI Installation---> https://docs.crewai.com/installation................
+pip install uv
+uv --version
+uv tool install crewai
+uv tool list
+uv tool update-shell (One time to set the path)
+.......................................................................
+
+.........3. Create Project............
+crewai create crew vacation_planner
+Select 8
+Bedrock Model in .env  -----> Should have access to Model (Check from console)
+Set Access Key, Secret Key, region-us.west-2
+Update Agent and Task details in YAML
+Add Tools to Agents in Crew.py 
+Update Agent and Task details in Crew.py
+Add input in main.py
+
+...........Run the Project.....................
+Lock dependencies --- > crewai install (uv lock file)
+uv add boto3
+Run Command --- > crewai run
+............................................
+
+.......5. UI Install - Streamlit..........
+
+.......# Changes in case of errors using Amazon Bedrock....https://docs.crewai.com/en/concepts/agents..........
+
+#1 Imports
+from crewai import LLM
+
+#2 Define and plug in the values for LLM and SerperDev
+serper_dev_tool=SerperDevTool(api_key='9951ae7963727fd049c8ba2bfff0f8a6799cf2c7')
+llm = LLM (model='bedrock/us.amazon.nova-pro-v1:0') # Donot add region attribute(not supported by Bedrock Nova as it is cross region)
+
+#3 @agents - for both Agnets
+llm=llm
+.....................................
+
+.........Add Streamlit UI......
+# Add streamlit file.py
+# Import class VacationPlanner() in Streamlit file
+uv add streamlit
+
+.....Run Streamlit on Local...........
+# Run Streamlit File ---- > Streamlit run StreamlitUI.py

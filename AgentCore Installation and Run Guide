@@ -1,0 +1,105 @@
+# Pre-Requisites.....................................
+- Install Docker Desktop - https://www.docker.com/get-started/
+- AWS Account
+- Install AWS CLI - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+- Setup IAM Role(AdminRole) for AWS CLI - aws configure
+- Bedrock Model Access - NovaPro in us-west-2 [Now provided by default)
+.........................................................
+
+# Steps to Deploy Agentic App on ### 1. Bedrock AgentCore Runtime.............
+
+# Step 1 - AgentCore Import 
+-- AgentCore imports --- > https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/using-any-agent-framework.html
+
+# Step 2 - Add AgentCore Runtime Decorator in the code -  Python decorator within the Bedrock AgentCore SDK--------------------
+Function to be executed by the runtime on an event (prompt) & Creates WebServer Endpoints (/invocations–POST & /ping - GET)
+
+# Step 3 - Create requirements.txt and run(root folder) --------------------
+Run --- > pip install -r requirements.txt 
+
+# Step 4 -  Test locally.............................
+Run --- > python src/vacation_planner/crew.py
+Test -- > curl http://localhost:8080/ping
+
+# Step 5: Docker Build & Deploy Commands..............
+
+# Create Docker File
+Dockerfile 
+
+#  Setup buildx
+docker buildx create --use
+# Create ECR repository
+aws ecr create-repository --repository-name vacation-planner-observability --region us-west-2   [provide your repo name in place of vacation-planner01]
+# Login to ECR
+aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 196715057542.dkr.ecr.us-west-2.amazonaws.com    [Replace with your AWS account number - 196715057542 and Region(if required)]
+# Build and push [ Can take upto 30 mins on first build due to ARM 64 arch.]
+docker buildx build --platform linux/arm64 -t 196715057542.dkr.ecr.us-west-2.amazonaws.com/vacation-planner-observability:latest --push .
+[Change aws account name number and image name in place of vacation-planner01]
+[Important ---- > Please note it can take upto 30mins for first time build due to ARM64 arch.]
+
+# Step 6 - From the AgentCore Service - Deploy the Agentic AI App with Image in ECR
+
+# Step 7 - Test the endpoint
+
+# Test the Endpoint - Sample
+{
+  "topic": "Plan a vacation to Bali, Indonesia"
+}
+
+# Step 8 Create AWS Lambda function and API Gateway
+
+# Step 9 Test Postman
+Step-by-Step in Postman:
+- Set Method: Select POST
+- Enter URL: Paste the API Gateway URL
+- Add Header:
+- Key: Content-Type, Value: application/json
+- Set Body: Select raw, Choose JSON from dropdown, Paste the JSON payload
+
+Sample Payloads to Test:
+{
+  "prompt": "Plan a 7-day vacation to New York"
+}
+
+# 10 Deploy UI using Streamlit
+- Add Streamlit File
+- Replace with your API Endpoint
+- pip install streamlit
+- streamlit run streamlit_api.py (replace with streamlit file name)
+-----End.................
+
+# ...................2. AgentCore Observability (Metrics, Logs and Traces).................
+.....Uses OpenTelemetry library (open source) - aws-opentelemetry-distro (ADOT) - (https://opentelemetry.io/docs/collector distributions/) -----
+
+# Step 1 - Add opentelemetry-distro in requirements.txt 
+# Step 2 - Add opentelemetry-distro in Docker File
+# Step 3 - Application Signals (APM) and choose Transaction search --- > Enable Transaction Search (toggle it ON)  -- aws/spans
+# Step 4 - Enable Model invocation Logging
+# Step 5 - Build the image and push to repo
+# Step 6 - Update the AgentCore Runtime Configuration from Console
+# Step 7 - Add IAM Permissions to the Role used by the AgentCore Runtime
+# Step 8 - Wait 5-10 minutes for changes to take effect
+
+# =============================================================================
+# OpenTelemetry Configuration for AWS CloudWatch GenAI Observability - Agents not hosted on Amazon Bedrock AgentCore Runtime,
+# =============================================================================
+
+# AWS OpenTelemetry Distribution
+OTEL_PYTHON_DISTRO=aws_distro
+OTEL_PYTHON_CONFIGURATOR=aws_configurator
+
+# Export Protocol
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_TRACES_EXPORTER=otlp
+
+# CloudWatch Integration (uncomment and configure as needed)
+OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=agents/strands-agent-logs,x-aws-log-stream=default,x-aws-metric-namespace=agents
+
+# Service Identification
+OTEL_RESOURCE_ATTRIBUTES=service.name=agentic-travel-strands
+
+# Enable Agent Observability
+AGENT_OBSERVABILITY_ENABLED=true
+
+Runtime Metrics - https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-runtime-metrics.html
+
